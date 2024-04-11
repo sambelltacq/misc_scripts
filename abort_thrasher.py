@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Starts transient and continuous runs then aborts and checks the UUT returns to IDLE
 """
 
