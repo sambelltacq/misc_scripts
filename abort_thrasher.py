@@ -20,7 +20,8 @@ def run_main(args):
     log.info(f"Starting thrash test on {args.uut}")
     uut = factory(args.uut)
     uut.s0.set_abort
-    wait_tstate('IDLE') and wait_cstate('IDLE')
+    if not wait_cstate('IDLE'):
+        exit('Failed to abort reboot needed')
     print('Ready\n')
 
     tests = [
