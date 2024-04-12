@@ -34,28 +34,36 @@ def run_main(args):
 
     results = {}
 
-    for test in tests:
+    for idx, test in enumerate(tests):
         testname = test.__name__
-        log.info(f"\nTesting {testname}")
+        if idx in args.exclude:
+            log.info(f"Skipping {testname}")
+            continue
+        print()
+        log.info(f"Testing {testname}")
         results[testname] = {'runs': 0, 'fails': 0}
-
-        for loop in range(1, args.loops+1):
-            log.info(f"\nLoop {loop}")
-            results[testname]['runs'] += 1
-            gstate = test()
-            abort()
-            if not gstate:
-                log.error(f"{testname} incorrect state skipping to next")
-                results[testname]['fails'] += 1
-                break
-            if wait_tstate('IDLE') and wait_cstate('IDLE'):
-                log.success("Reached IDLE after abort")
-            else:
-                log.failure(f"Did not reach IDLE after abort")
-                results[testname]['fails'] += 1
+        try:
+            for loop in range(1, args.loops+1):
+                print()
+                log.info(f"Loop {loop} {testname}")
+                results[testname]['runs'] += 1
+                gstate = test()
+                abort()
+                if not gstate:
+                    log.error(f"{testname} incorrect state skipping to next")
+                    results[testname]['fails'] += 1
+                    break
+                if wait_tstate('IDLE') and wait_cstate('IDLE'):
+                    log.success("Reached IDLE after abort")
+                else:
+                    log.failure(f"Did not reach IDLE after abort")
+                    results[testname]['fails'] += 1
+        except Exception as e:
+            log.critical(f"During {testname} a script exception has occurred {e}")
         log.info(f"Total Runs {results[testname]['runs']} Fails: {results[testname]['fails']}")
-
-    log.info("\nResults")
+    
+    print()
+    log.info("Results")
     for testname in results:
         log.info(f"{testname}\t\t Runs: {results[testname]['runs']} Fails {results[testname]['fails']}")
     
@@ -136,10 +144,14 @@ def wait_cstate(target, timeout=20):
     log.info(f"Timeout")
     return False
 
+def list_of_ints(arg):
+    return list(map(int, arg.split(',')))
+
 def get_parser():
     parser = argparse.ArgumentParser(description='abort thrash loop')
     parser.add_argument('--loops', default=100, type=int, help="total loops per type")
     parser.add_argument('--debug', default=0, type=int, help="enable debug")
+    parser.add_argument('--exclude', default=[], type=list_of_ints, help="exclude tests")
     parser.add_argument('uut',help="uut")
     return parser
 
