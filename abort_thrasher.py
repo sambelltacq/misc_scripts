@@ -59,8 +59,11 @@ def run_main(args):
                 else:
                     log.failure(f"Did not reach IDLE after abort")
                     results[testname]['fails'] += 1
+        except KeyboardInterrupt:
+            log_error(testname, 'KeyboardInterrupt')
         except Exception as e:
-            log.critical(f"During {testname} a script exception has occurred {e}")
+            log_error(testname, e)
+
         log.info(f"Total Runs {results[testname]['runs']} Fails: {results[testname]['fails']}")
     
     print()
@@ -68,6 +71,8 @@ def run_main(args):
     for testname in results:
         log.info(f"{testname}\t\t Runs: {results[testname]['runs']} Fails {results[testname]['fails']}")
     
+def log_error(testname, error = ''):
+    log.critical(f"During {testname} a script exception has occurred {error}")
 
 def post_abort_arm():
     """Aborts during post arm"""
