@@ -1,0 +1,3 @@
+#to cross compile isramp
+
+arm-linux-gnueabi-g++ -std=c++11 -static isramp.cpp  -o isramp
