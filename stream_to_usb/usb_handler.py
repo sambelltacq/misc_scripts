@@ -23,7 +23,6 @@ mount_path = "/media/disk_{}"
 sproc = None
 
 def run_main(args):
-    #print(args)
     enable_usb()
     
     devs = [d[-1] for d in glob(devdir.format('?'))]
@@ -92,9 +91,7 @@ def mount_device(devnum):
     mount_point = mount_path.format(devnum)
     os.makedirs(mount_point, mode=0o777, exist_ok=True)
     
-    if is_mounted(dev_node):
-        print(f"[mount] Device {devnum} already mounted")
-        return
+    if is_mounted(dev_node): return
     cmd = f"mount {dev_node} {mount_point}"
     print(f"cmd {cmd}")
     success = not bool(os.system(cmd))
@@ -103,9 +100,7 @@ def mount_device(devnum):
     
 def unmount_device(devnum):
     mount_point = mount_path.format(devnum)
-    if not is_mounted(mount_point): 
-        print(f"[unmount] Device {devnum} not mounted")
-        return
+    if not is_mounted(mount_point): return
     print('unmounting')
     success = not bool(os.system(f"sync;sync;umount {mount_point}"))
     if success: print(f"[unmount] Device {devnum} unmounted")
@@ -119,8 +114,6 @@ def enabled_device(devnum):
             fp.write("1")
             print(f"[enable] Device {devnum} enabled")
             time.sleep(0.5)
-        else:
-            print(f"[enable] Device {devnum} already enabled")
 
 def disable_device(devnum):
     configfile = os.path.join(devdir.format(devnum), "bConfigurationValue")
@@ -129,8 +122,6 @@ def disable_device(devnum):
         if enabled:
             fp.write("0")
             print(f"[disable] Device {devnum} disabled")
-        else:
-            print(f"[enable] Device {devnum} already disabled")
 
 def erase_device(devnum):
     if not exists(mount_path.format(devnum)): return
@@ -170,7 +161,6 @@ def stream_to_device(devs, nbuffers, concat, filesdir):
     print('starting stream')
     bufferlen = int(run_cmd('get.site 0 bufferlen'))
     cmd = "acq400_streamd {site} | acq400_stream_disk {maxbuff} {mount}"
-    bufferlen = int(bufferlen)
     env = {
         'BUFFERLEN': str(bufferlen),
         'EXTENSION': '.dat',
@@ -200,15 +190,14 @@ def wait_stream(secs):
         
         if secs and sproc.runtime > secs:
             print(f"Stream reached time limit")
-            
             os.kill(os.getpid(), signal.SIGINT)
             break
+        
         if sproc.poll() is not None:
             print(f"Stream finished")
             os.kill(os.getpid(), signal.SIGINT)
             break
         time.sleep(1)
-    
 
 def stop_stream():
     print('Stopping stream')
@@ -238,12 +227,12 @@ def get_parser():
     group.add_argument('--nbuffers', type=int, default=9999999, help=f"stream max buffers")
     
     parser.add_argument('--format', choices=['vfat'], help=f"format device")
-    parser.add_argument('--erase', action='store_true', help=f"erase disk")
+    parser.add_argument('--erase', action='store_true', help=f"erase device")
     parser.add_argument('--stream', action='store_true', help=f"start stream")
     parser.add_argument('--concat', default=1, type=int, help=f"stream file concat")
     parser.add_argument('--filesdir', default=100, type=int, help=f"files per dir")
     
-    parser.add_argument('devnum', nargs='?', type=list_of_ints, help='target devices 1 2 3 empty for all')
+    parser.add_argument('devnum', nargs='?', type=list_of_ints, help='target devices 1,2 empty for all')
     return parser
 
 if __name__ == '__main__':
